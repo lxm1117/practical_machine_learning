@@ -1,0 +1,60 @@
+---
+title: "machine learning project"
+date: "June 21, 2015"
+output: html_document
+---
+
+
+Introduction
+-------
+The study aims to use a trained model to predict the types of collected movement actions.
+
+The model
+-------
+The given training data was read from the file "pml-training.csv". It was partitioned into a training and a testing subset randomly based on the variable classe with a probably 0.75. 
+
+```{r}
+setwd("/Users/ximi/Documents/coursera_datasci/prac_machine_learning")
+library(caret)
+set.seed(117859)
+data_tr<-read.csv("pml-training.csv",fill=T,blank.lines.skip=T,na.strings=c("NA","","#DIV/0!"))
+```
+
+Variables that contain NAs over 50% of cases are removed from the data set. 
+```{r}
+na_num<-vector(mode="numeric", length=dim(data_tr)[2])
+for(i in 1:dim(data_tr)[1]){
+        t<-sapply(data_tr[i,], function(v) as.numeric(is.na(v)==T))
+        na_num<-na_num+t
+}
+tmp<-which(na_num>=dim(data_tr)[1]*0.5)
+data_tr<-data_tr[,-tmp]
+inTrain<-createDataPartition(y=data_tr$classe,p=0.75,list=FALSE)
+training<-data_tr[inTrain,]
+testing<-data_tr[-inTrain,]
+```
+
+The model was trained using the random forest algorithm. The model performance using training data as input is as below in terms of a confusion matrix. 
+
+```{r}
+library(randomForest)
+fitControl <- trainControl(## 10-fold CV
+    method = "repeatedcv",
+    number = 10,
+    repeats = 10)
+rf<-randomForest(classe~., data=training, importance=TRUE, proximity=TRUE, ntree=100)
+rf$confusion
+
+```
+Using the testing data to predit, the accuracy and confusion matrix turns out as below.
+
+```{r, echo=TRUE}
+pred0<-predict(rf,testing)
+cm<-confusionMatrix(pred0, testing$classe)
+cm$overall
+cm$table
+```
+
+
+ 
+
