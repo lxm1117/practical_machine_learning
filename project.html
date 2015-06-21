@@ -80,8 +80,10 @@ library(caret)</code></pre>
 ## Loading required package: ggplot2</code></pre>
 <pre class="r"><code>set.seed(117859)
 data_tr&lt;-read.csv(&quot;pml-training.csv&quot;,fill=T,blank.lines.skip=T,na.strings=c(&quot;NA&quot;,&quot;&quot;,&quot;#DIV/0!&quot;))</code></pre>
-<p>Variables that contain NAs over 50% of cases are removed from the data set.</p>
-<pre class="r"><code>na_num&lt;-vector(mode=&quot;numeric&quot;, length=dim(data_tr)[2])
+<p>Variables that contain NAs over 50% of cases are removed from the data set. The column X and user_name are confounding and are forced to be taken out.</p>
+<pre class="r"><code>data_tr$X&lt;-NULL
+data_tr$user_name&lt;-NULL
+na_num&lt;-vector(mode=&quot;numeric&quot;, length=dim(data_tr)[2])
 for(i in 1:dim(data_tr)[1]){
         t&lt;-sapply(data_tr[i,], function(v) as.numeric(is.na(v)==T))
         na_num&lt;-na_num+t
@@ -103,27 +105,44 @@ testing&lt;-data_tr[-inTrain,]</code></pre>
 rf&lt;-randomForest(classe~., data=training, importance=TRUE, proximity=TRUE, ntree=100)
 rf$confusion</code></pre>
 <pre><code>##      A    B    C    D    E class.error
-## A 4185    0    0    0    0   0.0000000
-## B    0 2848    0    0    0   0.0000000
-## C    0    1 2566    0    0   0.0003896
-## D    0    0    0 2411    1   0.0004146
-## E    0    0    0    0 2706   0.0000000</code></pre>
+## A 4184    1    0    0    0   0.0002389
+## B    3 2845    0    0    0   0.0010534
+## C    0    4 2563    0    0   0.0015582
+## D    0    0    0 2410    2   0.0008292
+## E    0    0    0    4 2702   0.0014782</code></pre>
 <p>Using the testing data to predit, the accuracy and confusion matrix turns out as below.</p>
 <pre class="r"><code>pred0&lt;-predict(rf,testing)
 cm&lt;-confusionMatrix(pred0, testing$classe)
 cm$overall</code></pre>
 <pre><code>##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
-##         1.0000         1.0000         0.9992         1.0000         0.2845 
+##         0.9988         0.9985         0.9973         0.9996         0.2845 
 ## AccuracyPValue  McnemarPValue 
 ##         0.0000            NaN</code></pre>
 <pre class="r"><code>cm$table</code></pre>
 <pre><code>##           Reference
 ## Prediction    A    B    C    D    E
 ##          A 1395    0    0    0    0
-##          B    0  949    0    0    0
-##          C    0    0  855    0    0
-##          D    0    0    0  804    0
-##          E    0    0    0    0  901</code></pre>
+##          B    0  949    1    0    0
+##          C    0    0  853    2    0
+##          D    0    0    1  801    1
+##          E    0    0    0    1  900</code></pre>
+<p>Finally readin the seperate quiz data, the results are as below.</p>
+<pre class="r"><code>data_test&lt;-read.csv(&quot;pml-testing.csv&quot;,fill=T, blank.lines.skip=T,na.strings=c(&quot;NA&quot;,&quot;&quot;,&quot;#DIV/0!&quot;))
+data_test_1&lt;-data_test
+data_test_1$X&lt;-NULL
+data_test_1$user_name&lt;-NULL
+data_test_1&lt;-data_test_1[,-tmp]
+data_test_1$problem_id&lt;-NULL
+data_test_1$classe&lt;-as.factor(c(rep(&quot;A&quot;,4),rep(&quot;B&quot;,4),rep(&quot;C&quot;,4),rep(&quot;D&quot;,4),rep(&quot;E&quot;,4)))
+
+d&lt;-rbind(testing, data_test_1)
+pred2&lt;-predict(rf,d)
+tail(pred2,20)</code></pre>
+<pre><code>##  4905  4906  4907 49081  4909 49101 49111  4912 49131  4914 49151  4916 
+##     B     A     B     A     A     E     D     B     A     A     B     C 
+##  4917  4918  4919 49201  4921  4922  4923 49241 
+##     B     A     E     E     A     B     B     B 
+## Levels: A B C D E</code></pre>
 </div>
 
 

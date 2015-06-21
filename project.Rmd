@@ -20,8 +20,10 @@ set.seed(117859)
 data_tr<-read.csv("pml-training.csv",fill=T,blank.lines.skip=T,na.strings=c("NA","","#DIV/0!"))
 ```
 
-Variables that contain NAs over 50% of cases are removed from the data set. 
+Variables that contain NAs over 50% of cases are removed from the data set. The column X and user_name are confounding and are forced to be taken out.
 ```{r}
+data_tr$X<-NULL
+data_tr$user_name<-NULL
 na_num<-vector(mode="numeric", length=dim(data_tr)[2])
 for(i in 1:dim(data_tr)[1]){
         t<-sapply(data_tr[i,], function(v) as.numeric(is.na(v)==T))
@@ -55,6 +57,21 @@ cm$overall
 cm$table
 ```
 
+Finally readin the seperate quiz data, the results are as below.
+
+```{r, echo=TRUE}
+data_test<-read.csv("pml-testing.csv",fill=T, blank.lines.skip=T,na.strings=c("NA","","#DIV/0!"))
+data_test_1<-data_test
+data_test_1$X<-NULL
+data_test_1$user_name<-NULL
+data_test_1<-data_test_1[,-tmp]
+data_test_1$problem_id<-NULL
+data_test_1$classe<-as.factor(c(rep("A",4),rep("B",4),rep("C",4),rep("D",4),rep("E",4)))
+
+d<-rbind(testing, data_test_1)
+pred2<-predict(rf,d)
+tail(pred2,20)
+```
 
  
 
